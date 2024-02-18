@@ -2,6 +2,46 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Function to check if input.txt format is correct
+int checkInput(FILE *file, FILE *output)
+{
+    int rows, cols;
+
+    // Read the first three lines to get the number of rows
+    for (int i = 0; i < 3; i++)
+    {
+        if (fscanf(file, "%d", &rows) != 1)
+        {
+            fprintf(output, "Error: input.txt has wrong format\n");
+            return 1;
+        }
+    }
+
+    while (!feof(file))
+    {
+        int a, b, c, d;
+        char end;
+        if (fscanf(file, "%d,%d,%d,%d", &a, &b, &c, &d) == 4)
+        {
+            continue;
+        }
+        else
+        {
+            fscanf(file, "%c", &end);
+            if (end == 'E')
+            {
+                rewind(file);
+                return 0;
+            }
+            else
+            {
+                fprintf(output, "Error: input.txt has wrong format\n");
+                return 1;
+            }
+        }
+    }
+}
+
 // Function to draw based on coordinates
 void drawLine(FILE *input, FILE *output)
 {
@@ -194,7 +234,9 @@ int main(int argc, char *argv[])
     }
 
     // Call the function to draw the line and fill the space
-    drawLine(inputFile, outputFile);
+    if (checkInput(inputFile, outputFile) == 0){
+        drawLine(inputFile, outputFile);
+    }
 
     // Close the files
     fclose(inputFile);
