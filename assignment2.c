@@ -49,7 +49,7 @@ void drawLine(FILE *input, FILE *output)
     // Initialize variables
     int x = 0, y = 0, time = 0;
 
-    // Check format and get maxX and maxY
+    // Read from input.txt
     fscanf(input, "%d", &x);
     fscanf(input, "%d", &y);
     fscanf(input, "%d", &time);
