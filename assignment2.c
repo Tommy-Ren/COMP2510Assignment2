@@ -2,57 +2,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Function to check if input.txt format is correct
-int checkInput(FILE *input, FILE *output)
+// Function to draw based on coordinates
+void drawLine(FILE *input, FILE *output)
 {
-    int rows, cols;
+    // Initialize
+    int maxX = 0, maxY = 0;
 
-    // Read the first three lines to get the number of rows
-    for (int i = 0; i < 3; i++)
-    {
-        if (fscanf(input, "%d", &rows) != 1)
-        {
-            fprintf(output, "Error: input.txt has wrong format\n");
-            return 1;
-        }
-    }
-
+    // Check format and get maxX and maxY
     while (!feof(input))
     {
-        int a, b, c, d;
+        int x, y;
         char end;
-        if (fscanf(input, "%d,%d,%d,%d", &a, &b, &c, &d) == 4)
+        if (fscanf(input, "%d,%d", &x, &y) == 2)
         {
-            continue;
+            if (x > maxX)
+                maxX = x;
+            if (y > maxY)
+                maxY = y;
         }
         else
         {
-            // Check the E at the end of input.txt
             fscanf(input, "%c", &end);
             if (end == 'E')
             {
                 rewind(input);
-                return 0;
+                break;
             }
             else
             {
+                printf("Error: input.txt has wrong format\n");
                 fprintf(output, "Error: input.txt has wrong format\n");
-                return 1;
+                return;
             }
         }
     }
-}
-
-// Function to draw based on coordinates
-void drawLine(FILE *input, FILE *output)
-{
-    // Initialize variables
-    int x = 0, y = 0, time = 0;
-
-    // Read from input.txt
-    fscanf(input, "%d", &x);
-    fscanf(input, "%d", &y);
-    fscanf(input, "%d", &time);
 
     // Allocate memory for the 2D array
     char **grid = (char **)malloc((maxY + 1) * sizeof(char *));
@@ -211,10 +194,7 @@ int main(int argc, char *argv[])
     }
 
     // Call the function to draw the line and fill the space
-    if (checkInput(inputFile, outputFile) == 0)
-    {
-        drawLine(inputFile, outputFile);
-    }
+    drawLine(inputFile, outputFile);
 
     // Close the files
     fclose(inputFile);
