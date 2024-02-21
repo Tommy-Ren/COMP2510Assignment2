@@ -49,6 +49,39 @@ void printParticles(Particle *ps, int nP) {
     }
 }
 
+void simulateParticles(Particle *ps, int w, int h, int t, int nP) {
+    for (int i = 0; i < nP; i++) {
+        Particle *p = ps + i;
+        for (int j = 0; j < t; j++) {
+            if (p->x + p->vx < 0 || p-> x + p->vx >= w) p->vx = -p->vx;
+            if (p->y + p->vy < 0 || p-> y + p->vy >= h) p->vy = -p->vy;
+            p->x += p->vx;
+            p->y += p->vy;
+        }
+    }
+}
+
+void displayGrid(Particle *ps, int w, int h, int nP) {
+    // for (int y = 0; y < h; y++) {
+    //     for (int x = 0; x < w; x++) {
+    //         int particlePresent = 0;
+    //         for (int i = 0; i < nP; i++) {
+    //             Particle *p = ps + i;
+    //             if (p->x == x && p->y == y) {
+    //                 particlePresent = 1;
+    //                 break;
+    //             }
+    //         }
+    //         if (particlePresent) {
+    //             printf("+"); // Print symbol representing a particle
+    //         } else {
+    //             printf("*"); // Print an empty space
+    //         }
+    //     }
+    //     printf("\n"); // Move to the next line after printing each row
+    // }
+}
+
 int main(int argc, char *argv[])
 {
     // Initialize file pointer
@@ -78,6 +111,11 @@ int main(int argc, char *argv[])
 
     int numParticles = readFile(inputFile, outputFile, &width, &height, &time, &particles);
     printParticles(particles, numParticles);
+
+    simulateParticles(particles, width, height, time, numParticles);
+    printParticles(particles, numParticles);
+
+    displayGrid(particles, width, height, numParticles);
 
     free(particles);
 
