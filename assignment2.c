@@ -2,107 +2,116 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct
-{
+typedef struct {
     int x, y;
     int vx, vy;
+    int collusion;
 } Particle;
 
-int readFile(FILE *input, FILE *output, int *pw, int *ph, int *pt, Particle **ps)
-{
-    // Read the first 3 lines from input.txt
-    if (fscanf(input, "%d %d %d", pw, ph, pt) != 3)
-    {
+int readFile(FILE *input, FILE *output, int *pw, int *ph, int *pt, Particle **ps) {
+    if (fscanf(input, "%d %d %d", pw, ph, pt) != 3) {
         fprintf(output, "Error: input.txt has wrong format\n");
         return 0;
     }
 
-    // Check particles' format and get num of particles
     int numParticles = 0;
     int a, b, c, d;
     char ch;
-    while ((ch = fgetc(input)) != 'E')
-    {
+    while ((ch = fgetc(input)) != 'E') {
         ungetc(ch, input);
-        if (fscanf(input, "%d,%d,%d,%d ", &a, &b, &c, &d) != 4)
-        {
+        if (fscanf(input, "%d,%d,%d,%d ", &a, &b, &c, &d) != 4) {
             fprintf(output, "Error: input.txt has wrong format\n");
             return 0;
         }
         numParticles++;
     }
 
-    // Read again from beginning and get width, height, and time
     rewind(input);
     fscanf(input, "%d %d %d", pw, ph, pt);
 
-    // Create a struct that can hold all particles
     *ps = malloc(numParticles * sizeof(Particle));
-    if (*ps == NULL)
-    {
+    if (*ps == NULL) {
         fprintf(output, "Error: Memory allocation failed\n");
         return 0;
     }
 
-    // Give values for all particles
-    for (int i = 0; i < numParticles; i++)
-    {
+    for (int i = 0; i < numParticles; i++) {
         Particle *p = *ps + i;
         fscanf(input, "%d,%d,%d,%d ", &p->x, &p->y, &p->vx, &p->vy);
+        p->collusion = 0;
     }
 
     return numParticles;
 }
 
-void printParticles(Particle *ps, int nP)
-{
-    // ONLY FOR TESTER
-    // Print information of all particles
-    for (int i = 0; i < nP; i++)
-    {
+void printParticles(Particle *ps, int nP) {
+    for (int i = 0; i < nP; i++) {
         Particle *p = ps + i;
-        printf("x = %d, y = %d, vx = %d, vy = %d\n", p->x, p->y, p->vx, p->vy);
+        printf("x = %d, y = %d, vx = %d, vy = %d cls = %d\n", p->x, p->y, p->vx, p->vy, p->collusion);
     }
 }
 
-void simulateParticles(Particle *ps, int w, int h, int t, int nP)
-{
-    for (int i = 0; i < nP; i++)
-    {
-        // Iterate each particle
-        Particle *p = ps + i;
-        for (int j = 0; j < t; j++)
-        {
-            if (p->x + p->vx < 0 || p->x + p->vx >= w)
-                p->vx = -p->vx;
-            if (p->y + p->vy < 0 || p->y + p->vy >= h)
-                p->vy = -p->vy;
+void simulateParticles(Particle *ps, int w, int h, int t, int nP) {
+    for (int x = 0; x < nP; x++) {
+            Particle *p1 = ps + x;
+            if (p1->collusion == 1) continue;
+            for (int y = x + 1; y < nP; y++) {
+                Particle *p2 = ps + y;
+                if (p2->collusion == 1) continue;
+                if (p1->x == p2->x && p1->y == p2->y) {
+                    p1->collusion = 1;
+                    p2->collusion = 1;
+                }
+            }
+    }
+
+    for (int i = 0; i < t; i++) {
+        for (int j = 0; j < nP; j++) {
+            Particle *p = ps + j;
+            if (p->x + p->vx < 0 || p-> x + p->vx >= w) p->vx = -p->vx;
+            if (p->y + p->vy < 0 || p-> y + p->vy >= h) p->vy = -p->vy;
             p->x += p->vx;
             p->y += p->vy;
+        }
+
+        for (int x = 0; x < nP; x++) {
+            Particle *p1 = ps + x;
+            if (p1->collusion == 1) continue;
+            for (int y = x + 1; y < nP; y++) {
+                Particle *p2 = ps + y;
+                if (p2->collusion == 1) continue;
+                if (p1->x == p2->x && p1->y == p2->y) {
+                    p1->collusion = 1;
+                    p2->collusion = 1;
+                }
+            }
         }
     }
 }
 
-void displayGrid(Particle *ps, int w, int h, int nP)
-{
-    // for (int y = 0; y < h; y++) {
-    //     for (int x = 0; x < w; x++) {
-    //         int particlePresent = 0;
-    //         for (int i = 0; i < nP; i++) {
-    //             Particle *p = ps + i;
-    //             if (p->x == x && p->y == y) {
-    //                 particlePresent = 1;
-    //                 break;
-    //             }
-    //         }
-    //         if (particlePresent) {
-    //             printf("+"); // Print symbol representing a particle
-    //         } else {
-    //             printf("*"); // Print an empty space
-    //         }
-    //     }
-    //     printf("\n"); // Move to the next line after printing each row
-    // }
+void displayGrid(FILE *output, Particle *ps, int w, int h, int nP) {
+    char grid[h + 2][w + 2];
+    for (int i = 0; i < h + 2; i++) {
+        for (int j = 0; j < w + 2; j++) {
+            if (i * j == 0 || i == h + 1 || j == w + 1) {
+                grid[i][j] = '*';
+            } else {
+                grid[i][j] = ' ';
+            }
+        }
+    }
+
+    for (int i = 0; i < nP; i++) {
+        Particle *p = ps + i;
+        if (p->collusion == 0) grid[h - p->y][p->x + 1] = '+';
+    }
+
+    for (int i = 0; i < h + 2; i++) {
+        for (int j = 0; j < w + 2; j++) {
+            fputc(grid[i][j], output);
+        }
+        if (i < h +1) fputc('\n', output);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -131,14 +140,14 @@ int main(int argc, char *argv[])
 
     int width, height, time;
     Particle *particles;
-    
+
     int numParticles = readFile(inputFile, outputFile, &width, &height, &time, &particles);
-    printParticles(particles, numParticles);
+    // printParticles(particles, numParticles);
 
     simulateParticles(particles, width, height, time, numParticles);
     printParticles(particles, numParticles);
 
-    displayGrid(particles, width, height, numParticles);
+    displayGrid(outputFile, particles, width, height, numParticles);
 
     free(particles);
 
