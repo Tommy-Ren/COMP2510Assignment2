@@ -2,171 +2,107 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Function to draw based on coordinates
-void drawLine(FILE *input, FILE *output)
+typedef struct
 {
-    // Initialize
-    int maxX = 0, maxY = 0;
+    int x, y;
+    int vx, vy;
+} Particle;
 
-    // Check format and get maxX and maxY
-    while (!feof(input))
+int readFile(FILE *input, FILE *output, int *pw, int *ph, int *pt, Particle **ps)
+{
+    // Read the first 3 lines from input.txt
+    if (fscanf(input, "%d %d %d", pw, ph, pt) != 3)
     {
-        int x, y;
-        char end;
-        if (fscanf(input, "%d,%d", &x, &y) == 2)
-        {
-            if (x > maxX)
-                maxX = x;
-            if (y > maxY)
-                maxY = y;
-        }
-        else
-        {
-            fscanf(input, "%c", &end);
-            if (end == 'E')
-            {
-                rewind(input);
-                break;
-            }
-            else
-            {
-                printf("Error: input.txt has wrong format\n");
-                fprintf(output, "Error: input.txt has wrong format\n");
-                return;
-            }
-        }
+        fprintf(output, "Error: input.txt has wrong format\n");
+        return 0;
     }
 
-    // Allocate memory for the 2D array
-    char **grid = (char **)malloc((maxY + 1) * sizeof(char *));
-    for (int i = 0; i <= maxY; i++)
+    // Check particles' format and get num of particles
+    int numParticles = 0;
+    int a, b, c, d;
+    char ch;
+    while ((ch = fgetc(input)) != 'E')
     {
-        grid[i] = (char *)malloc((maxX + 1) * sizeof(char));
+        ungetc(ch, input);
+        if (fscanf(input, "%d,%d,%d,%d ", &a, &b, &c, &d) != 4)
+        {
+            fprintf(output, "Error: input.txt has wrong format\n");
+            return 0;
+        }
+        numParticles++;
     }
 
-    // Initialize the grid with spaces
-    for (int i = 0; i <= maxY; i++)
+    // Read again from beginning and get width, height, and time
+    rewind(input);
+    fscanf(input, "%d %d %d", pw, ph, pt);
+
+    // Create a struct that can hold all particles
+    *ps = malloc(numParticles * sizeof(Particle));
+    if (*ps == NULL)
     {
-        for (int j = 0; j <= maxX; j++)
-        {
-            grid[i][j] = ' ';
-        }
+        fprintf(output, "Error: Memory allocation failed\n");
+        return 0;
     }
 
-    // Draw the line and fill the space
-    int curX, curY;
-    fscanf(input, "%d,%d", &curX, &curY);
-
-    int prevX = curX, prevY = curY;
-    while (fscanf(input, "%d,%d", &curX, &curY) == 2)
+    // Give values for all particles
+    for (int i = 0; i < numParticles; i++)
     {
-        if (curX == prevX)
-        {
-            // If line segment is vertical
-            int lY = (curY < prevY) ? curY : prevY;
-            int rY = (curY > prevY) ? curY : prevY;
-
-            for (int i = lY; i <= rY; i++)
-            {
-                grid[i][curX] = '*';
-            }
-        }
-        else if (curY == prevY)
-        {
-            // If line segment is horizontal
-            int lX = (curX < prevX) ? curX : prevX;
-            int rX = (curX > prevX) ? curX : prevX;
-
-            for (int j = lX; j <= rX; j++)
-            {
-                grid[curY][j] = '*';
-            }
-        }
-        else
-        {
-            // If line segment is 45 degree
-            if (curX > prevX && curY > prevY)
-            {
-                for (int j = curX, i = curY; j >= prevX && i >= prevY; j--, i--)
-                {
-                    grid[i][j] = '*';
-                }
-            }
-            else if (curX > prevX && curY < prevY)
-            {
-                for (int j = curX, i = curY; j >= prevX && i <= prevY; j--, i++)
-                {
-                    grid[i][j] = '*';
-                }
-            }
-            else if (curX < prevX && curY > prevY)
-            {
-                for (int j = curX, i = curY; j <= prevX && i >= prevY; j++, i--)
-                {
-                    grid[i][j] = '*';
-                }
-            }
-            else if (curX < prevX && curY < prevY)
-            {
-                for (int j = curX, i = curY; j <= prevX && i <= prevY; j++, i++)
-                {
-                    grid[i][j] = '*';
-                }
-            }
-        }
-
-        prevX = curX;
-        prevY = curY;
+        Particle *p = *ps + i;
+        fscanf(input, "%d,%d,%d,%d ", &p->x, &p->y, &p->vx, &p->vy);
     }
 
-    // Fill the space between line segments
-    for (int i = 0; i <= maxY; i++)
-    {
-        // Calculate the point in the line
-        int point = 0;
-        for (int j = 0; j <= maxX; j++)
-        {
-            if (grid[i][j] == '*')
-            {
-                point++;
-            }
-        }
+    return numParticles;
+}
 
-        // If more than one point, fill the grid
-        if (point > 1)
+void printParticles(Particle *ps, int nP)
+{
+    // ONLY FOR TESTER
+    // Print information of all particles
+    for (int i = 0; i < nP; i++)
+    {
+        Particle *p = ps + i;
+        printf("x = %d, y = %d, vx = %d, vy = %d\n", p->x, p->y, p->vx, p->vy);
+    }
+}
+
+void simulateParticles(Particle *ps, int w, int h, int t, int nP)
+{
+    for (int i = 0; i < nP; i++)
+    {
+        // Iterate each particle
+        Particle *p = ps + i;
+        for (int j = 0; j < t; j++)
         {
-            int j = 0;
-            while (grid[i][j] != '*' && j <= maxX)
-            {
-                j++;
-            }
-            while (grid[i][j] == '*' && grid[i][j + 1] != '*' && j <= maxX)
-            {
-                grid[i][j + 1] = '*';
-                j++;
-            }
+            if (p->x + p->vx < 0 || p->x + p->vx >= w)
+                p->vx = -p->vx;
+            if (p->y + p->vy < 0 || p->y + p->vy >= h)
+                p->vy = -p->vy;
+            p->x += p->vx;
+            p->y += p->vy;
         }
     }
+}
 
-    // Print the grid
-    for (int i = maxY; i >= 0; i--)
-    {
-        for (int j = 0; j <= maxX; j++)
-        {
-            fprintf(output, "%c", grid[i][j]);
-        }
-        if (i != 0)
-        {
-            fprintf(output, "\n");
-        }
-    }
-
-    // Free the memory
-    for (int i = 0; i <= maxY; i++)
-    {
-        free(grid[i]);
-    }
-    free(grid);
+void displayGrid(Particle *ps, int w, int h, int nP)
+{
+    // for (int y = 0; y < h; y++) {
+    //     for (int x = 0; x < w; x++) {
+    //         int particlePresent = 0;
+    //         for (int i = 0; i < nP; i++) {
+    //             Particle *p = ps + i;
+    //             if (p->x == x && p->y == y) {
+    //                 particlePresent = 1;
+    //                 break;
+    //             }
+    //         }
+    //         if (particlePresent) {
+    //             printf("+"); // Print symbol representing a particle
+    //         } else {
+    //             printf("*"); // Print an empty space
+    //         }
+    //     }
+    //     printf("\n"); // Move to the next line after printing each row
+    // }
 }
 
 int main(int argc, char *argv[])
@@ -193,10 +129,19 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Call the function to draw the line and fill the space
-    drawLine(inputFile, outputFile);
+    int width, height, time;
+    Particle *particles;
+    
+    int numParticles = readFile(inputFile, outputFile, &width, &height, &time, &particles);
+    printParticles(particles, numParticles);
 
-    // Close the files
+    simulateParticles(particles, width, height, time, numParticles);
+    printParticles(particles, numParticles);
+
+    displayGrid(particles, width, height, numParticles);
+
+    free(particles);
+
     fclose(inputFile);
     fclose(outputFile);
 
