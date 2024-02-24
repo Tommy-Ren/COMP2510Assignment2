@@ -196,12 +196,13 @@ int main(int argc, char *argv[])
     Particle *particles;
 
     int numParticles = readFile(inputFile, outputFile, &width, &height, &time, &particles);
-    // printParticles(particles, numParticles);
 
-    simulateParticles(particles, width, height, time, numParticles);
-    printParticles(particles, numParticles);
-
-    displayGrid(outputFile, particles, width, height, numParticles);
+    // Only simulate it when num of particles is bigger than 0
+    if (numParticles)
+    {
+        simulateParticles(particles, width, height, time, numParticles);
+        displayGrid(outputFile, particles, width, height, numParticles);
+    }
 
     free(particles);
 
